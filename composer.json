@@ -1,0 +1,29 @@
+{
+    "name": "gepo/php-language-detector",
+    "description": "Detect languages by text",
+    "keywords": ["language", "detector", "language detector"],
+    "homepage": "https://github.com/gepo/php-language-detector",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Marco Martinelli",
+            "email": ""
+        },
+        {
+            "name": "Genandy Telegin",
+            "email": "gtelegin@gmail.com"
+        }
+    ],
+
+    "require": {
+        "php": ">=5.3.3",
+        "ext-pspell": "*"
+    },
+
+    "autoload": {
+        "psr-4": {
+            "LangDetector\\": "src/"
+        }
+    }
+}

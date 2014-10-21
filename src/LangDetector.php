@@ -1,4 +1,6 @@
 <?php
+namespace LangDetector;
+
 /*
 *******************************************************************************
 *    This program is free software: you can redistribute it and/or modify
@@ -19,57 +21,71 @@
 * Requires pspell and an aspell dictionary for each language that you want to detect.
 *
 * @author Marco Martinelli (https://github.com/martinellimarco)
+* @author Gennady Telegin <gtelegin@gmail.com>
 */
-class LangDetector{
-	var $langs;
-	var $badChars = array(',','.',';',':','?','!','#','(',')','[',']','{','}','<','>','+','-','_','&','@','*','\'','"','^','\\','/','%','$','€','£','0','1','2','3','4','5','6','7','8','9','|');
-	var $thres = 0.75;
+class LangDetector
+{
+	private $langs;
+	private $badChars = ',.;:?!#()[]{}<>+-_&@*\'"^\\/%$€£0123456789|';
+	private $thres = 0.75;
 
 	/**
 	 * $langs is an array of language codes, e.g. ['it','en','fr']
 	 */
-	function LangDetector($langs){
+	public function __construct($langs)
+	{
 		$this->langs = $langs;
 	}
 
-	private function filter($word){
-		return strlen(trim($word))>0;
+	protected function getLanguages()
+	{
+	    return $this->langs;
 	}
-
+	
 	/**
 	 * Returns an associative array that map each language code to the probability that $text is of that language.
 	 */
-	function getProbabilities($text){
-		$probs=Array();
+	public function getProbabilities($text){
+		$probs = array();
 
-		$words = array_filter(explode(' ',str_replace($this->badChars,' ',$text)), array($this, 'filter'));
+		$text = strtr($text, $this->badChars, ' ');
+		$text = preg_replace('/\s+/', ' ', $text);
+		
+		$words = explode(' ', $text);
 
-		$totalWords=count($words);
+		$totalWords = count($words);
 
-		foreach($this->langs as $lang){
-			$pspell = pspell_new($lang);
-			$goodWords=0;
-			foreach($words as $word){
-				if(pspell_check($pspell, $word)){
-					$goodWords++;
-				}
-			}
-			$probs[$lang]=$goodWords/$totalWords;
+		if ($totalWords > 0) {
+    		foreach($this->getLanguages() as $lang) {
+    			$pspell = pspell_new($lang);
+    			$goodWords = 0;
+    			
+    			foreach ($words as $word) {
+    				if (pspell_check($pspell, $word)) {
+    					++$goodWords;
+    				}
+    			}
+    			
+    			$probs[$lang] = $goodWords/$totalWords;
+    		}
+    
+    		arsort($probs);
 		}
-
-		arsort($probs);
+		
 		return $probs;
 	}
 
 	/**
 	 * Returns the most probable language for the given $text if the probability is above a threshold (0.75 by default), false otherwhise.
 	 */
-	function getLang($text){
+	public function getLang($text)
+	{
 		$probs = $this->getProbabilities($text);
 		$lang = key($probs);
-		if($probs[$lang]>=$this->thres){
+		
+		if ($probs[$lang] >= $this->thres) {
 			return $lang;
-		}else{
+		} else {
 			return false;
 		}
 	}
@@ -78,6 +94,6 @@ class LangDetector{
 	 * Set the threshold used by the getLang function.
 	 */
 	function setThres($thres){
-		$this->thres=$thres;
+		$this->thres = $thres;
 	}
 }
