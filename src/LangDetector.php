@@ -42,16 +42,24 @@ class LangDetector
 	    return $this->langs;
 	}
 	
+	protected function filterText($text)
+	{
+	    $text = preg_replace('/@\w+/', '', $text); // Filter out instagram-like user references (aka, @mybestfriend)
+	    
+	    $text = strtr($text, $this->badChars, ' ');
+	    $text = preg_replace('/\s+/', ' ', $text);
+	    
+	    return $text;
+	}
+	
 	/**
 	 * Returns an associative array that map each language code to the probability that $text is of that language.
 	 */
-	public function getProbabilities($text){
+	public function getProbabilities($text)
+	{
 		$probs = array();
 
-		$text = strtr($text, $this->badChars, ' ');
-		$text = preg_replace('/\s+/', ' ', $text);
-		
-		$words = explode(' ', $text);
+		$words = explode(' ', $this->filterText($text));
 
 		$totalWords = count($words);
 
@@ -93,7 +101,8 @@ class LangDetector
 	/**
 	 * Set the threshold used by the getLang function.
 	 */
-	function setThres($thres){
+	public function setThres($thres)
+	{
 		$this->thres = $thres;
 	}
 }
