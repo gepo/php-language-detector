@@ -92,6 +92,12 @@ class LangDetector
 		$lang = key($probs);
 		
 		if ($probs[$lang] >= $this->thres) {
+		    next($probs);
+		    $nextLang = key($probs);
+		    if ($probs[$nextLang] >= $this->thres) {
+		        return false;
+		    }
+		    
 			return $lang;
 		} else {
 			return false;
