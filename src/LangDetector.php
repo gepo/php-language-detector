@@ -30,14 +30,18 @@ class LangDetector
     private $badChars = ',.;:?!#()[]{}<>+-_&@*\'"^\\/%$€£0123456789|';
     private $thres = 0.75;
 
+    private $pspell = null;
+    
     /**
      * @param array $langs array of language codes to detect, e.g. ['it','en','fr']
      */
     public function __construct($langs)
     {
         $this->langs = $langs;
+        
+        $this->createPspell();
     }
-	
+    
     /**
      * Returns an associative array that map each language code to the probability that $text is of that language.
      * 
@@ -53,7 +57,8 @@ class LangDetector
 
         if ($totalWords > 0) {
             foreach($this->getLanguages() as $lang) {
-                $pspell = pspell_new($lang);
+                $pspell = $this->pspell[$lang];
+                //$pspell = pspell_new($lang);
                 $goodWords = 0;
 
                 foreach ($words as $word) {
@@ -117,5 +122,14 @@ class LangDetector
         $text = preg_replace('/\s+/', ' ', $text);
 
         return $text;
+    }
+    
+    private function createPspell()
+    {
+        if (!$this->pspell) {
+            foreach($this->getLanguages() as $lang) {
+                $this->pspell[$lang] = pspell_new($lang);
+            }
+        }
     }
 }
