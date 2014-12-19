@@ -58,7 +58,6 @@ class LangDetector
         if ($totalWords > 0) {
             foreach($this->getLanguages() as $lang) {
                 $pspell = $this->pspell[$lang];
-                //$pspell = pspell_new($lang);
                 $goodWords = 0;
 
                 foreach ($words as $word) {
