@@ -1,5 +1,6 @@
 <?php
 namespace LangDetector;
+
 /*
 *******************************************************************************
 *    This program is free software: you can redistribute it and/or modify
@@ -18,46 +19,46 @@ namespace LangDetector;
 */
 
 /**
-* This class detect the language of a given text.
-* Requires pspell and an aspell dictionary for each language that you want to detect.
-*
-* @author Marco Martinelli (https://github.com/martinellimarco)
-* @author Gennady Telegin <gtelegin@gmail.com>
-*/
+ * This class detect the language of a given text.
+ * Requires pspell and an aspell dictionary for each language that you want to detect.
+ *
+ * @author Marco Martinelli (https://github.com/martinellimarco)
+ * @author Gennady Telegin <gtelegin@gmail.com>
+ */
 class LangDetector
 {
     private $langs;
     private $badChars = ',.;:?!#()[]{}<>+-_&@*\'"^\\/%$€£0123456789|';
+    private $splitRegex = '';
+    private $pspell = null;
+
     private $thres = 0.75;
 
-    private $pspell = null;
-    
     /**
      * @param array $langs array of language codes to detect, e.g. ['it','en','fr']
      */
-    public function __construct($langs)
+    public function __construct(array $langs)
     {
         $this->langs = $langs;
-        
+
+        $this->splitRegex = '/[\s\r\t\n' . preg_quote($this->badChars, '/') . ']+/u';
         $this->createPspell();
     }
-    
+
     /**
      * Returns an associative array that map each language code to the probability that $text is of that language.
-     * 
+     *
      * @param string $text Input text
      */
     public function getProbabilities($text)
     {
         $probs = array();
-
-        $words = explode(' ', $this->filterText($text));
+        $words = preg_split($this->splitRegex, $this->filterText($text), -1, PREG_SPLIT_NO_EMPTY);
 
         $totalWords = count($words);
 
         if ($totalWords > 0) {
-            foreach($this->getLanguages() as $lang) {
-                $pspell = $this->pspell[$lang];
+            foreach ($this->pspell as $lang => $pspell) {
                 $goodWords = 0;
 
                 foreach ($words as $word) {
@@ -66,7 +67,7 @@ class LangDetector
                     }
                 }
 
-                $probs[$lang] = $goodWords/$totalWords;
+                $probs[$lang] = $goodWords / $totalWords;
             }
 
             arsort($probs);
@@ -77,37 +78,37 @@ class LangDetector
 
     /**
      * Returns the most probable language for the given $text if the probability is above a threshold (0.75 by default), false otherwhise.
-     * 
+     *
      * @param string $text Input text
      */
     public function getLang($text)
     {
         $probs = $this->getProbabilities($text);
-        $lang = key($probs);
+        list ($lang, $value) = each($probs);
 
-        if ($probs[$lang] >= $this->thres) {
-            next($probs);
-            $nextLang = key($probs);
-            if ($probs[$nextLang] >= $this->thres) {
+        if ($value >= $this->thres) {
+            $nextValue = current($probs);
+
+            if ($nextValue >= $this->thres) {
                 return false;
             }
 
             return $lang;
         } else {
-                return false;
+            return false;
         }
     }
 
     /**
      * Set the threshold used by the getLang function.
-     * 
+     *
      * @params float @thres
      */
     public function setThres($thres)
     {
         $this->thres = $thres;
     }
-    
+
     protected function getLanguages()
     {
         return $this->langs;
@@ -115,14 +116,9 @@ class LangDetector
 
     protected function filterText($text)
     {
-        $text = preg_replace('/@\w+/', '', $text); // Filter out instagram-like user references (aka, @mybestfriend)
-
-        $text = strtr($text, $this->badChars, ' ');
-        $text = preg_replace('/\s+/', ' ', $text);
-
-        return $text;
+        return preg_replace('/@\w+/', '', $text); // Filter out instagram-like user references (aka, @mybestfriend)
     }
-    
+
     private function createPspell()
     {
         if (!$this->pspell) {
