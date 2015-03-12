@@ -1,6 +1,8 @@
 <?php
 namespace LangDetector;
 
+use Psr\Log\LoggerInterface;
+
 /*
 *******************************************************************************
 *    This program is free software: you can redistribute it and/or modify
@@ -27,6 +29,8 @@ namespace LangDetector;
  */
 class LangDetector
 {
+    private $logger;
+
     private $langs;
     private $badChars = ',.;:?!#()[]{}<>+-_&@*\'"^\\/%$€£0123456789|';
     private $splitRegex = '';
@@ -37,9 +41,10 @@ class LangDetector
     /**
      * @param array $langs array of language codes to detect, e.g. ['it','en','fr']
      */
-    public function __construct(array $langs)
+    public function __construct(array $langs, LoggerInterface $logger)
     {
         $this->langs = $langs;
+        $this->logger = $logger;
 
         $this->splitRegex = '/[\s\r\t\n' . preg_quote($this->badChars, '/') . ']+/u';
         $this->createPspell();
@@ -59,6 +64,7 @@ class LangDetector
 
         if ($totalWords > 0) {
             foreach ($this->pspell as $lang => $pspell) {
+
                 $goodWords = 0;
 
                 foreach ($words as $word) {
@@ -123,7 +129,11 @@ class LangDetector
     {
         if (!$this->pspell) {
             foreach($this->getLanguages() as $lang) {
-                $this->pspell[$lang] = pspell_new($lang);
+                if (false !== $resource = @pspell_new($lang)) {
+                    $this->pspell[$lang] = $resource;
+                } else {
+                    $this->logger->error("Could not open pspell dictionary for `" . $lang . "`");
+                }
             }
         }
     }
